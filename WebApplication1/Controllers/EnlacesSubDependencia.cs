@@ -13,33 +13,23 @@ namespace GesDoc21.Controllers
 {
     [Route("Catalogos/Enlaces/[controller]")]
     [ApiController]
-    public class EnviarCorreo : ControllerBase
+    public class EnlacesSubDependencia : ControllerBase
     {
         private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _env;
-        public EnviarCorreo(IConfiguration configuration, IWebHostEnvironment env)
+        public EnlacesSubDependencia(IConfiguration configuration, IWebHostEnvironment env)
         {
             _configuration = configuration;
             _env = env;
         }
-        [HttpGet]
-        public JsonResult Get()
+        [HttpGet("{id}")]
+        public JsonResult Get(int id)
         {
-            string query = @"Select IdCatDependencia,Nombre,Siglas,Orden,rTipo
-                            from CatDependencias 
-                            Where Status = 'true' "; 
+            string query = @"Select * From CatEnlace Where IdCatSubDependencia =@id and Status <> 0 ";
 
-            string query2 = @"Select  IdCatSubDependencia,Nombre,Siglas,Orden 
-                              From CatSubDependencia 
-                              Where IdCatDependencia =@Id and Status = 1 "; 
 
-            string query3 = @"Select IdEnlace,Cuenta,Nombre,Correo,Telefono,Orden,IdCatDependencia,IdCatSubDependencia,Status
-                              From CatEnlace
-                              Where IdCatDependencia =@Id and IdCatSubDependencia =@IdSub and Status = 1 ";
-
-    
             DataTable table = new DataTable();
-            
+
             string sqlDataSource = _configuration.GetConnectionString("EmployeeAppCon");
 
             SqlDataReader myReader;
@@ -49,124 +39,29 @@ namespace GesDoc21.Controllers
                 myCon.Open();
                 using (SqlCommand myCommand = new SqlCommand(query, myCon))
                 {
+                    myCommand.Parameters.AddWithValue("@Id", id);
                     myReader = myCommand.ExecuteReader();
                     table.Load(myReader);
                     myReader.Close();
                     myCon.Close();
                 }
-            }          
+            }
 
-            List<Dependencia> listaDependencias = new List<Dependencia>();
-            foreach (DataRow dep in table.Rows)
+            List<Enlaces> listaEnlaces = new List<Enlaces>();
+            foreach (DataRow row in table.Rows)
             {
-                Dependencia dependencia = new Dependencia();
+                Enlaces enlaces = new Enlaces();
 
-                dependencia.id = Convert.ToInt32(dep["IdCatDependencia"]);
-                dependencia.nombre = dep["Nombre"].ToString().Trim();
-                dependencia.siglas = dep["Siglas"].ToString().Trim();
-                dependencia.orden = Convert.ToInt32(dep["Orden"]);
-                dependencia.ambito = Convert.ToInt32(dep["rTipo"]);
-                // List<Enlaces> Enlaces = new List<Enlaces>();
+                enlaces.id = Convert.ToInt32(row["IdEnlace"]);
+                enlaces.nombre = row["Nombre"].ToString().Trim();
+                enlaces.cuenta = row["Cuenta"].ToString().Trim();
+                enlaces.orden = Convert.ToInt32(row["Orden"]);
 
 
-                List<subDependencia> SubDependencias = new List<subDependencia>();
-                
-                DataTable table2 = new DataTable();
-                using (SqlConnection myCon = new SqlConnection(sqlDataSource))
-                {
-                    myCon.Open();
-                    using (SqlCommand myCommand = new SqlCommand(query2, myCon))
-                    {
-                        myCommand.Parameters.AddWithValue("@Id", dependencia.id);
-                        myReader = myCommand.ExecuteReader();
-                        table2.Load(myReader);
-                        myReader.Close();
-                        myCon.Close();
-                    }
-                }
-                
-                foreach (DataRow sub in table2.Rows)
-                {
-                    subDependencia SubDep = new subDependencia();
-
-                    SubDep.id = Convert.ToInt32(sub["IdCatSubDependencia"]);
-                    SubDep.nombre = sub["Nombre"].ToString().Trim();
-                    SubDep.siglas = sub["Siglas"].ToString().Trim();
-                    SubDep.orden = Convert.ToInt32(sub["Orden"]);
-                    SubDependencias.Add(SubDep);
-
-                    List<Enlaces> EnlacesSub = new List<Enlaces>();
-                
-                    DataTable table4 = new DataTable();
-                    using (SqlConnection myCon = new SqlConnection(sqlDataSource))
-                    {
-                        myCon.Open();
-                        using (SqlCommand myCommand = new SqlCommand(query3, myCon))
-                        {
-                            myCommand.Parameters.AddWithValue("@Id", dependencia.id);
-                            myCommand.Parameters.AddWithValue("@IdSub", SubDep.id);
-                            myReader = myCommand.ExecuteReader();
-                            table4.Load(myReader);
-                            myReader.Close();
-                            myCon.Close();
-                        }
-                    }
-                    
-                    foreach (DataRow enlcesub in table4.Rows)
-                    {
-                        Enlaces enlacesub = new Enlaces();
-                
-                        enlacesub.id = Convert.ToInt32(enlcesub["IdEnlace"]);
-                        enlacesub.nombre = enlcesub["Nombre"].ToString().Trim();
-                        enlacesub.cuenta = enlcesub["Cuenta"].ToString().Trim();
-                        enlacesub.correo = enlcesub["Correo"].ToString().Trim();
-                        enlacesub.telefono = enlcesub["Telefono"].ToString().Trim();
-                        enlacesub.orden = Convert.ToInt32(enlcesub["Orden"]);
-                        EnlacesSub.Add(enlacesub);
-                        
-                    }
-                    SubDep.enlaces = EnlacesSub;
-                    
-                }
-                dependencia.subDependencias = SubDependencias;
-
-                List<Enlaces> Enlaces = new List<Enlaces>();
-                
-                DataTable table3 = new DataTable();
-                using (SqlConnection myCon = new SqlConnection(sqlDataSource))
-                {
-                    myCon.Open();
-                    using (SqlCommand myCommand = new SqlCommand(query3, myCon))
-                    {
-                        myCommand.Parameters.AddWithValue("@Id", dependencia.id);
-                        myCommand.Parameters.AddWithValue("@IdSub", 0);
-                        myReader = myCommand.ExecuteReader();
-                        table3.Load(myReader);
-                        myReader.Close();
-                        myCon.Close();
-                    }
-                }
-                
-                foreach (DataRow enlce in table3.Rows)
-                {
-                    Enlaces enlace = new Enlaces();
-            
-                    enlace.id = Convert.ToInt32(enlce["IdEnlace"]);
-                    enlace.nombre = enlce["Nombre"].ToString().Trim();
-                    enlace.cuenta = enlce["Cuenta"].ToString().Trim();
-                    enlace.correo = enlce["Correo"].ToString().Trim();
-                    enlace.telefono = enlce["Telefono"].ToString().Trim();
-                    enlace.orden = Convert.ToInt32(enlce["Orden"]);
-                    Enlaces.Add(enlace);
-                    
-                }
-                dependencia.enlaces = Enlaces;
-
-
-                listaDependencias.Add(dependencia);
+                listaEnlaces.Add(enlaces);
             }
             Cabecera cabecera = new Cabecera();
-            cabecera.catalogo = listaDependencias;
+            cabecera.catEnlaces = listaEnlaces;
             cabecera.session = 1;
             return new JsonResult(cabecera);
 

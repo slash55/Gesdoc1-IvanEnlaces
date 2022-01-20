@@ -7,6 +7,8 @@ namespace GesDoc21.Models
         public int session { get; set; }
         
         public List<Dependencia> catalogo = new List<Dependencia>();
+
+        public List<Enlaces> catEnlaces = new List<Enlaces>();
         public Cabecera() {}
     }
 
