@@ -14,6 +14,7 @@ namespace GesDoc21.Models
 
     public class Dependencia
     {
+        //klsdfjksdhfjñhdjfhsdjkafhajklsdhfasjk
         public int id { get; set; }
         public string nombre { get; set; }
         public string siglas { get; set; }
